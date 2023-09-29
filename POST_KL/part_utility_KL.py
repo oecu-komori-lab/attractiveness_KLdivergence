@@ -16,7 +16,7 @@ def pred_mu_cov(session, name_list): # KL用の効用の推定
         if not os.path.isdir(result_dir):
             os.makedirs(result_dir ,exist_ok=True)
             
-        response = torch.load("./data/" + session + "/" + name + '/' + name + "_response.pt") 
+        response = torch.load("../data/" + session + "/" + name + '/' + name + "_response.pt") 
         model = PairwiseGP(result, response)
         model.load_state_dict(torch.load("../POST_meshgrid/result/model/" + session + "/" + name + "/" + name + "_model_state.pth")) #modelの読み込み
 

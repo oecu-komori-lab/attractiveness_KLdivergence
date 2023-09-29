@@ -53,7 +53,7 @@ def predict_dist(name_list, session, length=1000, size=214359):
         
         response = torch.load("../data/" + str(session) + "/" + name_list[i]+ "/" + name_list[i] + "_response.pt")
         model = PairwiseGP(result, response)
-        model.load_state_dict(torch.load("../result/model/" + str(session) + "/" + name_list[i] + "/" + name_list[i] + "_model_state.pth"))
+        model.load_state_dict(torch.load("./result/model/" + str(session) + "/" + name_list[i] + "/" + name_list[i] + "_model_state.pth"))
 
         for j in range(0, len(points_mesh), length):
             points = points_mesh[j: j + length]

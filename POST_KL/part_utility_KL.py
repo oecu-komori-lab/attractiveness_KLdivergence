@@ -3,7 +3,32 @@ import torch
 import pandas as pd
 import os
 from KL_function import KLdivergence
+from botorch.models import PairwiseGP
 
+def pred_mu_cov(session, name_list): # KL用の効用の推定
+    
+    result = torch.load("./data/main_result_data.pt") # 参加者resultデータの読み込み
+    
+    for name in name_list:
+        print("name:" ,name)
+        result_dir = "./result/" + session + "/" + name + "/"
+        
+        if not os.path.isdir(result_dir):
+            os.makedirs(result_dir ,exist_ok=True)
+            
+        response = torch.load("./data/" + session + "/" + name + '/' + name + "_response.pt") 
+        model = PairwiseGP(result, response)
+        model.load_state_dict(torch.load("../POST_meshgrid/result/model/" + session + "/" + name + "/" + name + "_model_state.pth")) #modelの読み込み
+
+        all_exKL_mu = model.posterior(result).mean.squeeze().unsqueeze(dim=1) # 予測平均
+        all_exKL_sigma2 = model.posterior(result).variance.squeeze().unsqueeze(dim=1) #　予測共分散
+        all_exKL_cov = model.posterior(result).covariance #　予測分散
+        
+        torch.save(all_exKL_mu, result_dir + name + "_all_PC_exKL_mu.pt")
+        torch.save(all_exKL_sigma2, result_dir + name + "_all_PC_exKL_sigma2.pt")
+        torch.save(all_exKL_cov, result_dir + name + "_all_PC_exKL_covariance.pt")
+        
+        
 def part_all_KL(sessions, name_list):
     save_dir = "./result/part_KL/"
     if not os.path.isdir(save_dir):
@@ -43,4 +68,7 @@ def part_all_KL(sessions, name_list):
 if __name__=="__main__":
     SESSIONS = ["beauty","cute"]
     name_list = np.loadtxt("../data/name_list.csv", dtype="unicode")
+    for session in SESSIONS:
+        pred_mu_cov(session,name_list)
+        
     part_all_KL(SESSIONS,name_list)

@@ -1,8 +1,33 @@
 import torch
 import os
 import numpy as np
+from botorch.models import PairwiseGP
 
-def mean_pred(name_list, session):
+def pred_mu_cov(session, name_list): # KL用の効用の推定
+    
+    result = torch.load("./data/main_result_data.pt") # 参加者resultデータの読み込み
+    
+    for name in name_list:
+        print("name:" ,name)
+        result_dir = "./result/" + session + "/" + name + "/"
+        
+        if not os.path.isdir(result_dir):
+            os.makedirs(result_dir ,exist_ok=True)
+            
+        response = torch.load("../data/" + session + "/" + name + '/' + name + "_response.pt") 
+        model = PairwiseGP(result, response)
+        model.load_state_dict(torch.load("../POST_meshgrid/result/model/" + session + "/" + name + "/" + name + "_model_state.pth")) #modelの読み込み
+
+        all_exKL_mu = model.posterior(result).mean.squeeze().unsqueeze(dim=1) # 予測平均
+        all_exKL_sigma2 = model.posterior(result).variance.squeeze().unsqueeze(dim=1) #　予測共分散
+        all_exKL_cov = model.posterior(result).covariance #　予測分散
+        
+        torch.save(all_exKL_mu, result_dir + name + "_all_PC_exKL_mu.pt")
+        torch.save(all_exKL_sigma2, result_dir + name + "_all_PC_exKL_sigma2.pt")
+        torch.save(all_exKL_cov, result_dir + name + "_all_PC_exKL_covariance.pt")
+        
+        
+def mean_pred_mu (session, name_list):
     result_dir = "./result/" + session + "/"
     for num, name in enumerate(name_list):
         if num==0:
@@ -25,6 +50,7 @@ def mean_pred(name_list, session):
 
     torch.save(all_exKL_sigma2, result_dir + "all_PC_exKL_sigma2_mean_list.pt")
     torch.save(all_exKL_sigma2_mean, result_dir + "all_PC_exKL_sigma2_mean.pt")
+
 
 def mean_pred_cov(session, name_list):
     result_dir = "./result/" + session + "/"
@@ -59,5 +85,6 @@ if __name__=="__main__":
     SESSIONS = ["beauty","cute"]
         
     for session in SESSIONS:
-        mean_pred(name_list, session)
+        pred_mu_cov(session,name_list)
+        mean_pred_mu(session,name_list)
         mean_pred_cov(session, name_list)

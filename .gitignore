@@ -2,4 +2,4 @@
 .python-version
 __pycache__/KL_function.cpython-38.pyc
 point_mesh.pt
-/pred
+pred

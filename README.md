@@ -57,3 +57,10 @@
     └── name_list.csv  :List of experiment participants
 
 ```
+
+Usage
+Install the necessary packages in a virtual environment using the following command:
+
+```
+pip install -r requirements.txt
+```

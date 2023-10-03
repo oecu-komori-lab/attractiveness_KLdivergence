@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-
 import postprocess_multi_dim as post
 
 

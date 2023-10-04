@@ -4,39 +4,35 @@ import torch
 from botorch.models import PairwiseGP, PairwiseLaplaceMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
 
-
 def point_mesh():
+    # Generate a point mesh for utility evaluation
     start_ = -1.0
     end_ = 1.0
     step_ = 0.2
     end_ = end_ + step_
     point = torch.arange(start_, end_, step_)
-    print(point.shape)
     x1, x2, x3, x4, x5, x6, x7, x8 = torch.meshgrid(point, point, point, point, point, point, point, point)
     x_mesh = torch.stack((x1, x2, x3, x4, x5, x6, x7, x8), dim=-1)
     torch.save(x_mesh.reshape(-1, 8), "./point_mesh.pt")
 
-
 def model_create(name_list, session):
+    # Create and save GP models for each participant
     result_dir = "./result/" + str(session) + "/model/"
     if not os.path.isdir(result_dir):
         os.makedirs(result_dir)
-        
-    result = torch.load("../data/" + str(session)+ "/" + "main_result_data.pt")
-    print('result', result.shape)
-    
+
+    result = torch.load("../data/" + str(session) + "/" + "main_result_data.pt")
+
     for i in range(len(name_list)):
-        print("Now processing", name_list[i])
-        response = torch.load("../data/" + str(session) + "/" + name_list[i]+ "/" + name_list[i] + "_response.pt")
-        print('response', response.shape)
+        response = torch.load("../data/" + str(session) + "/" + name_list[i] + "/" + name_list[i] + "_response.pt")
         model = PairwiseGP(result, response)
         mll = PairwiseLaplaceMarginalLogLikelihood(model)
         fit_gpytorch_torch(mll, options={"maxiter": 100, "disp": True, "lr": 0.01})
         state_dict = model.state_dict()
         torch.save(state_dict, result_dir + name_list[i] + "_model_state.pth")
 
-
 def predict_dist(name_list, session, length=1000, size=214359):
+    # Predict distributions for each participant
     result_dir = "./pred/" + str(session) + "/"
     if not os.path.isdir(result_dir):
         os.makedirs(result_dir)
@@ -49,9 +45,8 @@ def predict_dist(name_list, session, length=1000, size=214359):
 
         if not os.path.isdir(result_dir_each):
             os.makedirs(result_dir_each)
-        print(name_list[i])
-        
-        response = torch.load("../data/" + str(session) + "/" + name_list[i]+ "/" + name_list[i] + "_response.pt")
+
+        response = torch.load("../data/" + str(session) + "/" + name_list[i] + "/" + name_list[i] + "_response.pt")
         model = PairwiseGP(result, response)
         model.load_state_dict(torch.load("./result/model/" + str(session) + "/" + name_list[i] + "/" + name_list[i] + "_model_state.pth"))
 
@@ -71,10 +66,9 @@ def predict_dist(name_list, session, length=1000, size=214359):
                 sigma2 = None
         concatenate_dist(name=name_list[i], session=session, size=size)
 
-
 def concatenate_dist(name, session, size):
+    # Concatenate predicted distributions for a participant
     result_dir = "./pred/" + str(session) + "/"
-    print(name)
     result_dir_each = result_dir + name + "/dist/"
     mu_0 = torch.load(result_dir_each + "0_mu.pt").reshape(-1, 1)
     sigma2_0 = torch.load(result_dir_each + "0_sigma2.pt").reshape(-1, 1)
@@ -96,19 +90,18 @@ def concatenate_dist(name, session, size):
     torch.save(mu, result_dir + name + "_mu.pt")
     torch.save(sigma2, result_dir + name + "_sigma2.pt")
 
-
 def remove_intermediate_dist(name, session):
+    # Remove intermediate predicted distributions
     remove_dir = "./pred/" + str(session) + "/" + name + "/dist/"
     if os.path.isdir(remove_dir) is True:
         shutil.rmtree(remove_dir)
 
-
 def main_synthesize(name_list, session):
+    # Synthesize main results based on predicted distributions
     result_dir = "./pred/" + str(session) + "/"
     if not os.path.isdir(result_dir):
         os.makedirs(result_dir)
 
-    # 1人目のデータの読み込み
     mu_list = torch.load(result_dir + name_list[0] + "_mu.pt")
     sigma2_list = torch.load(result_dir + name_list[0] + "_sigma2.pt")
 

@@ -19,25 +19,35 @@ def KLdivergence(Mu1, S1, Mu2, S2): # Calculate KL divergence
     KL = 0.5 * (Trace - logdet + error - D)
     return KL
 
+
 def part_all_KL(sessions, name_list):
+    # Define the directory to save results
     save_dir = "./result/part_KL/"
+    
+    # Check if the directory exists, if not, create it
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir, exist_ok=True)
-    KL_all_list = np.empty([len(name_list)+1,2])
     
+    # Initialize an empty NumPy array to store KL divergences
+    KL_all_list = np.empty([len(name_list) + 1, 2])
+    
+    # Iterate through the names and calculate KL divergences
     for id, name in enumerate(name_list):
-        
+        # Load and process data for beauty and cute sessions
         beauty_mu = torch.load("./result/" + sessions[0] + "/" + name + "/" + name + "_all_PC_exKL_mu.pt").detach().numpy()
         cute_mu = torch.load("./result/" + sessions[1] + "/" + name + "/" + name + "_all_PC_exKL_mu.pt").detach().numpy()
         beauty_cov = torch.load("./result/" + sessions[0] + "/" + name + "/" + name + "_all_PC_exKL_covariance.pt").detach().numpy()
         cute_cov = torch.load("./result/" + sessions[1] + "/" + name + "/" + name + "_all_PC_exKL_covariance.pt").detach().numpy()
         
+        # Calculate KL divergences
         cute_to_beauty_KL = KLdivergence(beauty_mu, beauty_cov, cute_mu, cute_cov)
         beauty_to_cute_KL = KLdivergence(cute_mu, cute_cov, beauty_mu, beauty_cov)
         
-        KL_all_list[id,0] = cute_to_beauty_KL
-        KL_all_list[id,1] = beauty_to_cute_KL
-        
+        # Store KL divergences in the array
+        KL_all_list[id, 0] = cute_to_beauty_KL
+        KL_all_list[id, 1] = beauty_to_cute_KL
+    
+    # Calculate KL divergences for overall mean
     beauty_mu = torch.load("./result/" + sessions[0] + "/all_PC_exKL_mu_mean.pt").detach().numpy()
     cute_mu = torch.load("./result/" + sessions[1] + "/all_PC_exKL_mu_mean.pt").detach().numpy()
     beauty_cov = torch.load("./result/" + sessions[0] + "/all_PC_exKL_covariance_mean.pt").detach().numpy()
@@ -46,16 +56,22 @@ def part_all_KL(sessions, name_list):
     cute_to_beauty_KL = KLdivergence(beauty_mu, beauty_cov, cute_mu, cute_cov)
     beauty_to_cute_KL = KLdivergence(cute_mu, cute_cov, beauty_mu, beauty_cov)
     
-    KL_all_list[id+1,0] = cute_to_beauty_KL
-    KL_all_list[id+1,1] = beauty_to_cute_KL
+    # Store overall mean KL divergences in the array
+    KL_all_list[id + 1, 0] = cute_to_beauty_KL
+    KL_all_list[id + 1, 1] = beauty_to_cute_KL
 
+    # Create an index for the DataFrame
     index_name = name_list.tolist() + ["all"]
-    df = pd.DataFrame(KL_all_list, index=index_name, columns=['CUTENESS to BEAUTY','BEAUTY to CUTENESS'])
-    df.to_csv(save_dir + "part_KL_all_mean_KL.csv", float_format="%.6f")
     
+    # Create a DataFrame and save it to a CSV file
+    df = pd.DataFrame(KL_all_list, index=index_name, columns=['CUTENESS to BEAUTY', 'BEAUTY to CUTENESS'])
+    df.to_csv(save_dir + "part_KL_all_mean_KL.csv", float_format="%.6f")
 
-if __name__=="__main__":
-    SESSIONS = ["beauty","cute"]
-    name_list = np.loadtxt("../data/name_list.csv", dtype="unicode") 
-        
-    part_all_KL(SESSIONS,name_list)
+# Main function
+if __name__ == "__main__":
+    # Define the sessions and load the name list from a CSV file
+    SESSIONS = ["beauty", "cute"]
+    name_list = np.loadtxt("../data/name_list.csv", dtype="unicode")
+    
+    # Call the part_all_KL function
+    part_all_KL(SESSIONS, name_list)

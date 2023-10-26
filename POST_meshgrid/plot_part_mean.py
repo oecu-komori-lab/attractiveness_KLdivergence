@@ -20,17 +20,22 @@ def plot(point, name_list, dim, sessions):
                 mean_list = [i for i in index_list if i != ids]
                 # Load mean and variance data for each session
                 part_mean = torch.load("./pred/" + session + "/" + name + "_mu.pt").reshape(11, 11, 11, 11, 11, 11, 11, 11).detach().numpy()
+                part_var = torch.load("./pred/" + session + "/" + name + "_sigma2.pt").reshape(11, 11, 11, 11, 11, 11, 11, 11).detach().numpy()
                 
                 for m in mean_list[::-1]:
                     part_mean = part_mean.mean(axis=m)
+                    part_var = part_var.mean(axis=m)
                     
+                part_sd = np.sqrt(part_var)
+                
                 axes[ids,session_id].plot(point, part_mean.T, label=name, color=cmap(nid))    
+                # axes[ids,session_id].fill_between(point, part_mean + part_sd, part_mean - part_sd, color=cmap(nid), alpha=0.3)
                 # axes[ids].plot(point, cute_mean.T, linewidth=2, color='blue', label=sessions[0])
                 axes[ids,session_id].set_title("PC" + str(ids + 1))
                 axes[ids,session_id].set_ylabel("UTILITY")
                 axes[ids,session_id].set_xlim([-2, 2])
                 axes[ids,session_id].set_ylim([-2, 2])
-
+            
     # Add legend        
     handles, labels = axes[0,0].get_legend_handles_labels()
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left' ,handles=handles[:6], labels=labels[:6])
